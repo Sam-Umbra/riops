@@ -1,11 +1,13 @@
-use minigrep::{parameter::Parameters, search, search_case_insensitive};
-use std::{env, error::Error, fs, process};
+use clap::Parser;
+use std::{error::Error, fs, process};
+use ugrep::{parameter::Parameters, search_engine::search_file};
 
 fn main() {
-    let params = Parameters::build(env::args()).unwrap_or_else(|err| {
+    /* let params = Parameters::build(env::args()).unwrap_or_else(|err| {
         eprintln!("Problem parsing arguments: {err}");
         process::exit(1);
-    });
+    }); */
+    let params = Parameters::parse();
 
     if let Err(e) = run(params) {
         eprintln!("Application error: {e}");
@@ -14,13 +16,15 @@ fn main() {
 }
 
 fn run(params: Parameters) -> Result<(), Box<dyn Error>> {
-    let file_contents = fs::read_to_string(params.file_path)?;
+    let file_contents = fs::read_to_string(&params.file_path)?;
 
-    let results = if params.ignore_case {
-        search_case_insensitive(&params.query, &file_contents)
+    if params.directory.is_some() {
+        
     } else {
-        search(&params.query, &file_contents)
-    };
+        
+    }
+
+    let results = search_file(&params, &file_contents);
 
     for line in results {
         println!("{line}");
