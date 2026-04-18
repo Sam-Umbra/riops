@@ -1,24 +1,34 @@
-use std::{borrow::Cow, fs, path::PathBuf};
-
+use rayon::prelude::*;
+use std::{
+    borrow::Cow,
+    fs::File,
+    io::{BufRead, BufReader, Error},
+    path::PathBuf,
+};
 use walkdir::WalkDir;
 
 use crate::models::{FileMatchModel, LineMatchModel, Parameters};
 
-pub fn search_file(params: &Parameters, file_contents: &str) -> Vec<LineMatchModel> {
+pub fn search_file(params: &Parameters, path: &str) -> Result<Vec<LineMatchModel>, Error> {
     let query: Cow<str> = if params.ignore_case {
         Cow::Owned(params.query.to_lowercase())
     } else {
         Cow::Borrowed(&params.query)
     };
 
-    file_contents
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+
+    let results = reader
         .lines()
         .enumerate()
-        .filter_map(|(i, line)| {
-            let normalized_line: Cow<str> = if params.ignore_case {
-                Cow::Owned(line.to_lowercase())
+        .filter_map(|(i, line_result)| {
+            let line = line_result.ok()?;
+
+            let normalized_line = if params.ignore_case {
+                line.to_lowercase()
             } else {
-                Cow::Borrowed(line)
+                line.clone()
             };
 
             let matched = if params.whole_word {
@@ -33,29 +43,38 @@ pub fn search_file(params: &Parameters, file_contents: &str) -> Vec<LineMatchMod
                 None
             }
         })
-        .collect()
+        .collect();
+
+    Ok(results)
 }
 
 pub fn search_directory(dir: &PathBuf, params: &Parameters) -> Vec<FileMatchModel> {
-    let mut result: Vec<FileMatchModel> = Vec::new();
+    let entries: Vec<_> = WalkDir::new(dir)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            e.path().is_file() && e.path().extension().and_then(|s| s.to_str()) == Some("txt")
+        })
+        .collect();
 
-    for entry in WalkDir::new(dir).into_iter().filter_map(|e| e.ok()) {
-        let path = entry.path();
+    let mut result: Vec<FileMatchModel> = entries
+        .into_par_iter()
+        .filter_map(|entry| {
+            let path = entry.path();
+            let path_str = path.to_string_lossy().to_string();
 
-        if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("txt") {
-            match fs::read_to_string(path) {
-                Ok(content) => {
-                    let lines = search_file(params, &content);
-                    if !lines.is_empty() {
-                        let file_name = path.to_string_lossy().to_string();
-                        result.push(FileMatchModel::new(file_name, lines));
-                    }
-                },
-                Err(e) => eprintln!("Couldn't read {:?}: {}", path, e),
+            match search_file(params, &path_str) {
+                Ok(lines) if !lines.is_empty() => Some(FileMatchModel::new(path_str, lines)),
+                Ok(_) => None,
+                Err(e) => {
+                    eprintln!("Couldn't read {:?}: {}", path, e);
+                    None
+                }
             }
-        }
-    }
+        })
+        .collect();
 
+    result.sort_unstable_by(|a, b| a.file_name.cmp(&b.file_name));
     result
 }
 
@@ -80,24 +99,3 @@ fn is_whole_word_match(line: &str, query: &str) -> bool {
         before_ok && after_ok
     })
 }
-
-/* pub fn search<'a>(query: &str, file_contents: &'a str) -> Vec<&'a str> {
-    file_contents
-        .lines()
-        .filter(|line| line.contains(query))
-        .collect()
-}
-
-pub fn search_case_insensitive<'a>(query: &str, file_contents: &'a str) -> Vec<&'a str> {
-    file_contents
-        .lines()
-        .filter(|line| line.to_lowercase().contains(&query.to_lowercase()))
-        .collect()
-}
-
-pub fn search_whole_word<'a>(query: &str, file_contents: &'a str) -> Vec<&'a str> {
-    file_contents
-        .lines()
-        .filter(|&line| line == query)
-        .collect()
-} */

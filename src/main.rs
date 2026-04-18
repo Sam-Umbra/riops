@@ -3,13 +3,9 @@ use riops::{
     models::Parameters,
     search_engine::{search_directory, search_file},
 };
-use std::{error::Error, fs, process};
+use std::{error::Error, process};
 
 fn main() {
-    /* let params = Parameters::build(env::args()).unwrap_or_else(|err| {
-        eprintln!("Problem parsing arguments: {err}");
-        process::exit(1);
-    }); */
     let params = Parameters::parse();
 
     if let Err(e) = run(params) {
@@ -40,8 +36,7 @@ fn run(params: Parameters) -> Result<(), Box<dyn Error>> {
             .file_path
             .as_deref()
             .ok_or("File path is required when not using --directory")?;
-        let file_contents = fs::read_to_string(path)?;
-        let line_matches = search_file(&params, &file_contents);
+        let line_matches = search_file(&params, path)?;
         if params.simple_search {
             println!("{}: {} Occurrences(s)", params.query, line_matches.len())
         } else {
