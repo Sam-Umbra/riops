@@ -14,6 +14,7 @@ use clap::Parser;
 /// ```bash
 /// riops --query "foo" --file-path ./file.txt
 /// riops --query "foo" --directory ./src --ignore-case --whole-word
+/// riops --query "foo" --directory ./src --extension rs --extension toml
 /// ```
 #[derive(Parser, Debug)]
 pub struct Parameters {
@@ -40,16 +41,36 @@ pub struct Parameters {
     #[arg(short, long = "whole-word")]
     pub whole_word: bool,
 
-    /// Recursively search `.txt` files inside this directory.
+    /// Recursively search files inside this directory.
     ///
     /// Defaults to the current directory (`.`) when the flag is provided
     /// without a value. Mutually exclusive with `--file-path`.
+    ///
+    /// By default only `.txt` files are searched. Use `--extension` to
+    /// target other file types.
     #[arg(short, long, num_args = 0..=1, default_missing_value = ".", conflicts_with = "file_path")]
     pub directory: Option<PathBuf>,
 
     /// Print a one-line summary per file instead of every matching line.
     #[arg(short, long)]
     pub simple_search: bool,
+
+    /// Restrict directory search to files with these extensions.
+    ///
+    /// Can be specified multiple times to allow several extensions at once.
+    /// When omitted, defaults to `.txt` only.
+    ///
+    /// # Examples
+    ///
+    /// ```bash
+    /// # Search only Rust source files
+    /// riops -q "fn main" -d ./src --extension rs
+    ///
+    /// # Search Rust and TOML files
+    /// riops -q "rayon" -d . -e rs -e toml
+    /// ```
+    #[arg(short = 'e', long = "extension")]
+    pub file_extension: Option<Vec<String>>,
 }
 
 /// Aggregates all matching lines found within a single file.

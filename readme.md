@@ -8,6 +8,7 @@
 - ⚡ Parallel directory search powered by [Rayon](https://github.com/rayon-rs/rayon)
 - 🔠 Case-insensitive matching (`--ignore-case`)
 - 🔤 Whole-word matching (`--whole-word`)
+- 🗂️ Filter by one or more file extensions (`--extension`)
 - 📄 Summary output mode (`--simple-search`)
 
 ## Installation
@@ -30,17 +31,20 @@ riops [OPTIONS] --query <QUERY>
 
 ### Options
 
-| Flag                      | Short | Description                                             |
-| ------------------------- | ----- | ------------------------------------------------------- |
-| `--query <QUERY>`         | `-q`  | The search term                                         |
-| `--file-path <FILE_PATH>` | `-f`  | Path to a single file to search                         |
-| `--directory [DIR]`       | `-d`  | Recursively search a directory (default: `.`)           |
-| `--ignore-case`           | `-i`  | Case-insensitive matching                               |
-| `--whole-word`            | `-w`  | Match whole words only                                  |
-| `--simple-search`         | `-s`  | Print a one-line summary per file instead of each match |
-| `--help`                  | `-h`  | Print help                                              |
+| Flag                      | Short | Description                                               |
+| ------------------------- | ----- | --------------------------------------------------------- |
+| `--query <QUERY>`         | `-q`  | The search term                                           |
+| `--file-path <FILE_PATH>` | `-f`  | Path to a single file to search                           |
+| `--directory [DIR]`       | `-d`  | Recursively search a directory (default: `.`)             |
+| `--ignore-case`           | `-i`  | Case-insensitive matching                                 |
+| `--whole-word`            | `-w`  | Match whole words only                                    |
+| `--extension <EXT>`       | `-e`  | Restrict search to files with this extension (repeatable) |
+| `--simple-search`         | `-s`  | Print a one-line summary per file instead of each match   |
+| `--help`                  | `-h`  | Print help                                                |
 
 `--file-path` and `--directory` are mutually exclusive.
+
+When `--directory` is used without `--extension`, only `.txt` files are searched.
 
 ### Examples
 
@@ -48,11 +52,17 @@ riops [OPTIONS] --query <QUERY>
 # Search a single file
 riops --query "hello" --file-path ./notes.txt
 
-# Recursively search the current directory
+# Recursively search the current directory (default: .txt files)
 riops --query "hello" --directory
 
 # Recursively search a specific directory
 riops --query "hello" --directory ./docs
+
+# Search only Rust source files
+riops -q "fn main" -d ./src --extension rs
+
+# Search multiple extensions at once
+riops -q "rayon" -d . -e rs -e toml
 
 # Case-insensitive search
 riops -q "hello" -f ./notes.txt --ignore-case

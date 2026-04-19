@@ -17,7 +17,7 @@ use crate::models::{FileMatchModel, LineMatchModel, Parameters};
 /// the entire file into memory at once. Each line is tested according to
 /// the active flags in `params`:
 ///
-/// | Flag          | Behavior                                                    |
+/// | Flag          | Behavior                                                     |
 /// |---------------|--------------------------------------------------------------|
 /// | `ignore_case` | Both the query and the line are lowercased before comparison.|
 /// | `whole_word`  | Delegates to [`is_whole_word_match`].                        |
@@ -76,13 +76,27 @@ pub fn search_file(params: &Parameters, path: &str) -> Result<Vec<LineMatchModel
     Ok(results)
 }
 
-/// Recursively searches all `.txt` files under `dir` in parallel and returns
-/// per-file results sorted by file name.
+/// Recursively searches files under `dir` in parallel and returns per-file
+/// results sorted by file name.
 ///
-/// The directory tree is walked with [`WalkDir`], then all eligible files are
-/// processed concurrently using a Rayon parallel iterator. Files that cannot
-/// be read are skipped with an error message printed to `stderr`. Files with
-/// no matches are excluded from the returned vector.
+/// ### File extension filtering
+///
+/// Which files are searched depends on `params.file_extension`:
+///
+/// | `--extension`        | Files searched                                   |
+/// |----------------------|--------------------------------------------------|
+/// | Not provided         | `.txt` files only (default)                      |
+/// | One or more values   | Files whose extension matches any of the values  |
+///
+/// ### Parallelism
+///
+/// The directory tree is walked serially with [`WalkDir`] to collect eligible
+/// paths, then all files are processed concurrently via a Rayon parallel
+/// iterator. Results are sorted alphabetically after collection because
+/// parallel iteration produces non-deterministic ordering.
+///
+/// Files that cannot be read are skipped with an error message on `stderr`.
+/// Files with no matches are excluded from the returned vector.
 ///
 /// # Arguments
 ///
@@ -99,7 +113,21 @@ pub fn search_directory(dir: &PathBuf, params: &Parameters) -> Vec<FileMatchMode
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| {
-            e.path().is_file() && e.path().extension().and_then(|s| s.to_str()) == Some("txt")
+            if !e.path().is_file() {
+                return false;
+            }
+
+            let file_ext = e.path().extension().and_then(|s| s.to_str());
+
+            if let Some(allowed_exts) = &params.file_extension {
+                // User supplied explicit extensions — match any of them.
+                file_ext
+                    .map(|ext| allowed_exts.iter().any(|p| p == ext))
+                    .unwrap_or(false)
+            } else {
+                // Default: restrict to .txt files.
+                file_ext == Some("txt")
+            }
         })
         .collect();
 
