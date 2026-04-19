@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["is_whole_word_match","search_directory","search_file"]};
