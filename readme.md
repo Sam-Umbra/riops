@@ -21,7 +21,7 @@ cd riops
 cargo build --release
 ```
 
-The compiled binary will be at `target/release/riops`.
+The compiled binary will be at `target/release/rps`.
 
 ## Usage
 
@@ -31,16 +31,16 @@ rps [OPTIONS] --query <QUERY>
 
 ### Options
 
-| Flag                      | Short | Description                                               |
-| ------------------------- | ----- | --------------------------------------------------------- |
-| `--query <QUERY>`         | `-q`  | The search term                                           |
-| `--file-path <FILE_PATH>` | `-f`  | Path to a single file to search                           |
-| `--directory [DIR]`       | `-d`  | Recursively search a directory (default: `.`)             |
-| `--ignore-case`           | `-i`  | Case-insensitive matching                                 |
-| `--whole-word`            | `-w`  | Match whole words only                                    |
-| `--extension <EXT>`       | `-e`  | Restrict search to files with this extension (repeatable) |
-| `--simple-search`         | `-s`  | Print a one-line summary per file instead of each match   |
-| `--help`                  | `-h`  | Print help                                                |
+| Flag                          | Short | Description                                                        |
+|-------------------------------|-------|--------------------------------------------------------------------|
+| `--query <QUERY>`             | `-q`  | The search term                                                    |
+| `--file-path <FILE_PATH>`     | `-f`  | Path to a single file to search                                    |
+| `--directory [DIR]`           | `-d`  | Recursively search a directory (default: `.`)                      |
+| `--ignore-case`               | `-i`  | Case-insensitive matching                                          |
+| `--whole-word`                | `-w`  | Match whole words only                                             |
+| `--extension <EXT>`           | `-e`  | Restrict search to files with this extension (repeatable)          |
+| `--simple-search`             | `-s`  | Print a one-line summary per file instead of each match            |
+| `--help`                      | `-h`  | Print help                                                         |
 
 `--file-path` and `--directory` are mutually exclusive.
 
@@ -52,11 +52,17 @@ When `--directory` is used without `--extension`, only `.txt` files are searched
 # Search a single file
 rps --query "hello" --file-path ./notes.txt
 
-# Recursively search the current directory
+# Recursively search the current directory (default: .txt files)
 rps --query "hello" --directory
 
 # Recursively search a specific directory
 rps --query "hello" --directory ./docs
+
+# Search only Rust source files
+rps -q "fn main" -d ./src --extension rs
+
+# Search multiple extensions at once
+rps -q "rayon" -d . -e rs -e toml
 
 # Case-insensitive search
 rps -q "hello" -f ./notes.txt --ignore-case
@@ -86,11 +92,11 @@ hello in ./docs/intro.txt: 2 occurrences(s)
 
 ## Dependencies
 
-| Crate     | Version | Purpose                       |
-| --------- | ------- | ----------------------------- |
-| `clap`    | 4.6.1   | CLI argument parsing          |
-| `rayon`   | 1.12.0  | Data parallelism / threading  |
-| `walkdir` | 2.5.0   | Recursive directory traversal |
+| Crate      | Version  | Purpose                          |
+|------------|----------|----------------------------------|
+| `clap`     | 4.6.1    | CLI argument parsing             |
+| `rayon`    | 1.12.0   | Data parallelism / threading     |
+| `walkdir`  | 2.5.0    | Recursive directory traversal    |
 
 ## License
 
