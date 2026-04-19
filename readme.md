@@ -25,7 +25,7 @@ The compiled binary will be at `target/release/riops`.
 ## Usage
 
 ```
-riops [OPTIONS] --query <QUERY>
+rps [OPTIONS] --query <QUERY>
 ```
 
 ### Options
@@ -46,22 +46,22 @@ riops [OPTIONS] --query <QUERY>
 
 ```bash
 # Search a single file
-riops --query "hello" --file-path ./notes.txt
+rps --query "hello" --file-path ./notes.txt
 
 # Recursively search the current directory
-riops --query "hello" --directory
+rps --query "hello" --directory
 
 # Recursively search a specific directory
-riops --query "hello" --directory ./docs
+rps --query "hello" --directory ./docs
 
 # Case-insensitive search
-riops -q "hello" -f ./notes.txt --ignore-case
+rps -q "hello" -f ./notes.txt --ignore-case
 
 # Whole-word match across a directory
-riops -q "log" -d ./logs --whole-word
+rps -q "log" -d ./logs --whole-word
 
 # Summary output (occurrence counts only)
-riops -q "error" -d ./logs --simple-search
+rps -q "error" -d ./logs --simple-search
 ```
 
 ### Output
